@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+
+##
+## weather
+##
+## Format the output of NWS plain-text weather reports from
+## wunderground.com and other compatible sites.
+##
+## Copyright (C) 2004 Michael J. Fromberger, All Rights Reserved.
+##
+## Permission is hereby granted, free of charge, to any person
+## obtaining a copy of this software and associated documentation
+## files (the "Software"), to deal in the Software without
+## restriction, including without limitation the rights to use, copy,
+## modify, merge, publish, distribute, sublicense, and/or sell copies
+## of the Software, and to permit persons to whom the Software is
+## furnished to do so, subject to the following conditions:
+##
+## The above copyright notice and this permission notice shall be
+## included in all copies or substantial portions of the Software.
+##
+## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+## EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+## MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+## NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+## HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+## WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+## OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+## DEALINGS IN THE SOFTWARE.
+##
+import os, sys
+import wformat
+from getopt import getopt, GetoptError
+
+host_name = None
+host_port = None
+output_type = 'formatted'
+
+try:
+    (opts, args) = getopt(sys.argv[1:], 'c:h:p:rs',
+                          ['cities=', 'host=', 'port=', 'raw', 'states'])
+except GetoptError, e:
+    print >> sys.stderr, "Error parsing command line arguments: %s" % e
+    sys.exit(1)
+
+for (key, arg) in opts:
+    if key in ('-c', '--cities'):
+        cities = wformat.get_city_codes(arg)
+
+        print "City codes for %s" % arg.upper()
+        keys = cities.keys()
+        keys.sort()
+        for k in keys:
+            print "%s\t%s" % (k, cities[k])
+
+        sys.exit(0)
+
+    if key in ('-h', '--host'):
+        host_name = arg
+        continue
+
+    if key in ('-p', '--port'):
+        host_port = int(arg)
+        continue
+
+    if key in ('-r', '--raw'):
+        output_type = 'raw'
+        continue
+
+    if key in ('-s', '--states'):
+        states = wformat.get_state_codes()
+
+        print "State codes:"
+        keys = states.keys()
+        keys.sort()
+        for k in keys:
+            print "%s\t%s" % (k, states[k])
+
+        sys.exit(0)
+
+weather_station = None
+
+# If the weather station is specified on the command line, use it.
+if len(args) > 0:
+    weather_station = args[0]
+
+# If not, check in the environment.
+if not weather_station:
+    weather_station = os.getenv('WEATHER_STATION')
+
+# If all else fails, complain
+if not weather_station:
+    print >> sys.stderr, \
+          "Usage:   weather <weather-station>\n" \
+          "Options: [--host <hostname>] [--port <port>]\n" \
+          "         [--cities <state>] [--raw] [--states]"
+    sys.exit(1)
+
+try:
+    if output_type == 'raw':
+        print wformat.fetch_weather(weather_station)[0]
+    else:
+        print wformat.get_weather(weather_station)
+except EOFError, e:
+    print >> sys.stderr, "Unexpected end-of-input while reading report\n" \
+          " -- %s" % e
+    sys.exit(1)
+
+# Here there be dragons
