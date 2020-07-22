@@ -150,8 +150,8 @@ def run_program(pgm, host, port):
 
             s = conn.recv(4096).replace('\r', '')
             if not s:
-                raise EOFError(
-                    "Unexpected EOF while waiting for `%s'" % expr.pattern)
+                raise EOFError("Unexpected EOF while waiting for `%s'" %
+                               expr.pattern)
 
             data[0] += s
             match = expr.search(data[0])
@@ -344,8 +344,9 @@ def format_info(info):
             out += msg
             out += f['data'] + '\n'
 
-    wrapper = textwrap.TextWrapper(
-        width=72, subsequent_indent='   ', fix_sentence_endings=True)
+    wrapper = textwrap.TextWrapper(width=72,
+                                   subsequent_indent='   ',
+                                   fix_sentence_endings=True)
 
     for r in info['reports']:
         out += "\n - %s\n" % r['when']
